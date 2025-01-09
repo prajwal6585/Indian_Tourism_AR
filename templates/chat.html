@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        #chat-container {
+            width: 80%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        #chat-box {
+            height: 400px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+        }
+        #chat-box div {
+            margin-bottom: 10px;
+        }
+        #chat-box div.user {
+            color: #007bff;
+        }
+        #chat-box div.ai {
+            color: #28a745;
+        }
+        input[type="text"] {
+            width: calc(100% - 120px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+    <script>
+        async function sendMessage() {
+            const message = document.getElementById('user-message').value;
+
+            if (message.trim() === '') {
+                alert('Please enter a message.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/ask-question', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: message }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('chat-box').innerHTML += 
+                        `<div class="user">User: ${message}</div>` +
+                        `<div class="ai">AI: ${data.response}</div>`;
+                } else {
+                    document.getElementById('chat-box').innerHTML += 
+                        `<div class="user">User: ${message}</div>` +
+                        `<div class="ai">AI: Error: ${data.response}</div>`;
+                }
+                document.getElementById('user-message').value = ''; // Clear input field
+                document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight; // Auto-scroll
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('chat-box').innerHTML += 
+                    `<div class="user">User: ${message}</div>` +
+                    `<div class="ai">AI: Error: Unable to connect to the server.</div>`;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="chat-container">
+        <h1>Chat with AI about {{ place_name }}</h1>
+        <div id="chat-box">
+            <!-- Chat messages will be displayed here -->
+        </div>
+        <input type="text" id="user-message" placeholder="Type your message here...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</body>
+</html>

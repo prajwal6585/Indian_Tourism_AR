@@ -1,0 +1,161 @@
+/* styles.css */
+
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #72EDF2 10%, #5151E5 100%);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #fff;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 3rem;
+    border-radius: 15px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+    animation: fadeIn 1.5s ease-in-out;
+}
+
+h1 {
+    font-weight: 700;
+    color: #FFFFFF;
+    text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+}
+
+.error-message {
+    background-color: rgba(255, 0, 0, 0.2);
+    border-left: 3px solid #FF4E50;
+    padding: 10px;
+    margin-bottom: 20px;
+    animation: slideIn 0.5s ease-in-out;
+}
+
+input[type="email"],
+input[type="password"] {
+    width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 30px;
+    outline: none;
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    transition: background 0.5s ease;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+input[type="submit"] {
+    width: 85%;
+    padding: 12px;
+    background: #5151E5;
+    border: none;
+    border-radius: 30px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+input[type="submit"]:hover {
+    background: #72EDF2;
+    transform: scale(1.05);
+}
+
+.form-links a {
+    color: #FFD700;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.form-links a:hover {
+    color: #FFF;
+}
+
+.background-blobs {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: blobMove 8s infinite alternate ease-in-out;
+}
+
+.blob1 {
+    width: 300px;
+    height: 300px;
+    background:orangered;
+    top: 5%;
+    left: 10%;
+}
+
+.blob2 {
+    width: 400px;
+    height: 400px;
+    background: white;
+    top: 20%;
+    right: 15%;
+    animation-delay: 2s;
+}
+
+.blob3 {
+    width: 200px;
+    height: 200px;
+    background: #6ae93c;
+    bottom: 10%;
+    left: 20%;
+    animation-delay: 4s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes blobMove {
+    from {
+        transform: translate(0px, 0px) scale(1);
+    }
+    to {
+        transform: translate(30px, 30px) scale(1.1);
+    }
+}

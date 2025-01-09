@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Tourism AR - Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+       
+    </style>
+</head>
+<body>
+    
+    <header>
+        <div class="header-content">
+            <p>You are logged in as <span class="username">{{ current_user.username }}</span></p>
+            <h1 class="header-title">Indian Tourism</h1>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+    </header>
+    
+    
+    
+    <div class="dropdown-container">
+        <select id="country-dropdown">
+            <option value="" disabled selected>Select Country</option>
+        </select>
+        <select id="state-dropdown" disabled>
+            <option value="" disabled selected>Select State</option>
+        </select>
+        <select id="district-dropdown" disabled>
+            <option value="" disabled selected>Select District</option>
+        </select>
+        <select id="place-dropdown" disabled>
+            <option value="" disabled selected>Select Place</option>
+            <option value="Temple">Temples</option>
+            <option value="Park">Parks</option>
+            <option value="Beach">Beaches</option>
+            <option value="WildlifeSanctuary">Wildlife Sanctuaries</option>
+            <option value="RiverLake">Rivers and Lakes</option>
+            <option value="UnescoHeritage">UNESCO Heritage Places</option>
+            <option value="TourismPlace">Tourism Places</option>
+            <option value="FoodStreet">Food Streets</option>
+            <option value="Market">Markets</option>
+            <option value="HillStationMountain">Hill Stations and Mountains</option>
+        </select>
+        <div class="marquee-container"></div>
+        <marquee behavior="scroll" direction="left" class="marquee">Choose the PLACE  from DROPDOWN or SEARCH in the SEARCHBOX</marquee>
+    </div>
+    </div>
+
+    
+<!-- Search Box -->
+<div id="search-container">
+    <input type="text" id="search-input" placeholder="Enter place name...">
+    <button id="search-button">Search</button>
+</div>
+
+    <div class="container" id="welcome-container">
+        <h1>🙏Discover India's Riches with AR & VR Technology🙏</h1>
+    </div>
+
+    <div id="map"></div> <!-- Map container -->
+    <div id="pano">
+        <button id="close-pano" onclick="closePano()">×</button>
+    </div> <!-- 360-degree view container -->
+
+    <script>
+        // Sample hierarchical data for countries, states, districts, and places
+        const data = {
+            "India": {
+                "Maharashtra": {
+                    "Pune": ["Pune City", "Shivajinagar"],
+                    "Mumbai": ["Andheri", "Borivali"]
+                },
+                "Karnataka": {
+                    "Bangalore": ["Whitefield", "Koramangala"],
+                    "Mysore": ["Mysore City"],
+                    "Udupi": ["Udupi City", "Karkala", "Hebri", "Kundapura", "Bindoor"],
+                    "Mangaluru": [
+        "Mangalore City",
+        "Surathkal",
+        "Mulki",
+        "Moodbidri",
+        "Kinnigoli",
+        "Ullal",
+        "Bajpe",
+        "Panambur",
+        "Thokottu",
+        "Someshwar",
+        "Kotekar",
+        "Puttur",
+        "Bantwal",
+        "Belthangady",
+        "Kadaba",
+        "Vitla",
+        "Sullia",
+        "Manjeshwar",
+        "Kateel",
+        "Kulur",
+        "Jeppinamogaru",
+        "Deralakatte"
+    ]
+                    
+                }
+            },
+            "USA": {
+                "California": {
+                    "Los Angeles": ["Downtown", "Hollywood"],
+                    "San Francisco": ["Bay Area"]
+                },
+                "New York": {
+                    "New York City": ["Manhattan", "Brooklyn"]
+                }
+            }
+        };
+
+        const countryDropdown = document.getElementById('country-dropdown');
+        const stateDropdown = document.getElementById('state-dropdown');
+        const districtDropdown = document.getElementById('district-dropdown');
+        const placeDropdown = document.getElementById('place-dropdown');
+
+        let map;
+        let markers = [];
+        let infoWindow;
+        let panorama;
+
+        function populateDropdown(dropdown, options) {
+            dropdown.innerHTML = '<option value="" disabled selected>Select</option>';
+            options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option;
+                opt.innerHTML = option;
+                dropdown.appendChild(opt);
+            });
+        }
+
+        function clearMarkers() {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+        }
+
+        function fetchAndDisplayMarkers(placeType, location) {
+            clearMarkers();
+            const service = new google.maps.places.PlacesService(map);
+            let request = {
+                location: location,
+                radius: '50000',
+                type: ''
+            };
+            
+            const placeTypeMapping = {
+                "Temple": "hindu_temple",
+                "Park": "park",
+                "Beach": "beach",
+                "WildlifeSanctuary": "zoo",
+                "RiverLake": "natural_feature",
+                "UnescoHeritage": "museum",
+                "TourismPlace": "tourist_attraction",
+                "FoodStreet": "restaurant",
+                "Market": "shopping_mall",
+                "HillStationMountain": "natural_feature"
+            };
+
+            request.type = placeTypeMapping[placeType] || '';
+
+            if (request.type) {
+                service.nearbySearch(request, function(results, status) {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                        results.forEach(place => {
+                            const marker = new google.maps.Marker({
+                                position: place.geometry.location,
+                                map: map,
+                                title: place.name
+                            });
+                            markers.push(marker);
+
+                            google.maps.event.addListener(marker, 'click', function() {
+                                infoWindow.setContent(`
+                                    <div>
+                                        <h3>${place.name}</h3>
+                                        <p>${place.vicinity}</p>
+                                        <button onclick="showDetails('${place.place_id}', '${place.name}', '${place.vicinity}', ${place.geometry.location.lat()}, ${place.geometry.location.lng()})">Details</button>
+                                        <button onclick="show360View(${place.geometry.location.lat()}, ${place.geometry.location.lng()})">360 Degree View</button>
+<button onclick="openChatWithAI('${place.place_id}', '${place.name}', '${place.vicinity}', ${place.geometry.location.lat()}, ${place.geometry.location.lng()})">Chat with AI</button> 
+                                 </div>
+                                `);
+                                infoWindow.open(map, marker);
+                            });
+                        });
+                    }
+                });
+            } else {
+                alert("Selected place type not supported.");
+            }
+        }
+
+        function geocodeAddress(address, callback) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: address }, function(results, status) {
+                if (status === google.maps.GeocoderStatus.OK) {
+                    callback(results[0].geometry.location);
+                } else {
+                    alert('Geocode was not successful for the following reason: ' + status);
+                }
+            });
+        }
+
+        function updateMapCenter(location, zoomLevel) {
+            map.setCenter(location);
+            map.setZoom(zoomLevel);
+        }
+
+        function showDetails(placeId, name, address, lat, lng) {
+            const service = new google.maps.places.PlacesService(map);
+            service.getDetails({ placeId: placeId }, function(place, status) {
+                if (status === google.maps.places.PlacesServiceStatus.OK) {
+                    const detailsContent = `
+                        <div>
+                            <h3>${place.name}</h3>
+                            <p>${place.formatted_address}</p>
+                            <p>Phone: ${place.formatted_phone_number || 'N/A'}</p>
+                            <p>Website: <a href="${place.website}" target="_blank">${place.website || 'N/A'}</a></p>
+                            <p>Rating: ${place.rating || 'N/A'}</p>
+                        </div>
+                    `;
+                    infoWindow.setContent(detailsContent);
+                    infoWindow.open(map);
+                } else {
+                    alert('Failed to fetch details: ' + status);
+                }
+            });
+        }
+
+        function show360View(lat, lng) {
+            document.getElementById('pano').style.display = 'block';
+            const position = { lat: lat, lng: lng };
+            panorama = new google.maps.StreetViewPanorama(document.getElementById('pano'), {
+                position: position,
+                pov: { heading: 34, pitch: 10 },
+                zoomControl: true
+            });
+        }
+
+        function closePano() {
+            document.getElementById('pano').style.display = 'none';
+        }
+
+        function initializeMap() {
+            const defaultLocation = { lat: 20.5937, lng: 78.9629 };
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultLocation,
+                zoom: 6
+            });
+            infoWindow = new google.maps.InfoWindow();
+
+            // Handle dropdown changes
+            countryDropdown.addEventListener('change', function() {
+                const selectedCountry = countryDropdown.value;
+                const states = Object.keys(data[selectedCountry]);
+                populateDropdown(stateDropdown, states);
+                stateDropdown.disabled = false;
+                districtDropdown.disabled = true;
+                placeDropdown.disabled = true;
+            });
+
+            stateDropdown.addEventListener('change', function() {
+                const selectedCountry = countryDropdown.value;
+                const selectedState = stateDropdown.value;
+                const districts = Object.keys(data[selectedCountry][selectedState]);
+                populateDropdown(districtDropdown, districts);
+                districtDropdown.disabled = false;
+            });
+
+            districtDropdown.addEventListener('change', function() {
+                placeDropdown.disabled = false;
+            });
+
+            placeDropdown.addEventListener('change', function() {
+                const selectedCountry = countryDropdown.value;
+                const selectedState = stateDropdown.value;
+                const selectedDistrict = districtDropdown.value;
+                const selectedPlace = data[selectedCountry][selectedState][selectedDistrict][0];
+                geocodeAddress(`${selectedDistrict}, ${selectedState}, ${selectedCountry}`, function(location) {
+                    updateMapCenter(location, 12);
+                    fetchAndDisplayMarkers(placeDropdown.value, location);
+                });
+            });
+        }
+
+        window.onload = function() {
+            populateDropdown(countryDropdown, Object.keys(data));
+            initializeMap();
+            
+            // Fade out the welcome message after 3 seconds
+            setTimeout(function() {
+                document.getElementById('welcome-container').style.display = 'none';
+            }, 3000);
+        };
+    </script>
+      <!-- Chat Interface Section -->
+    <div id="chat-container">
+        <button class="close-chat" onclick="closeChat()">Close</button>
+        <h1>AI Assistant</h1>
+        <div id="chat-box">
+            <!-- Chat messages will be displayed here -->
+        </div>
+        <input type="text" id="user-message" placeholder="Type your message here...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        function openChatWithAI(placeId, placeName, placeAddress, lat, lng) {
+            // Make an AJAX POST request to pass the place data to the server
+            fetch('/start-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    place_id: placeId,
+                    place_name: placeName,
+                    place_address: placeAddress,
+                    lat: lat,
+                    lng: lng
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Show the chat container
+                document.getElementById('chat-container').style.display = 'block';
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function closeChat() {
+            document.getElementById('chat-container').style.display = 'none';
+        }
+
+        async function sendMessage() {
+            const message = document.getElementById('user-message').value;
+
+            if (message.trim() === '') {
+                alert('Please enter a message.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/ask-question', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: message }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('chat-box').innerHTML += 
+                        `<div class="user">User: ${message}</div>` +
+                        `<div class="ai">AI: ${data.response}</div>`;
+                } else {
+                    document.getElementById('chat-box').innerHTML += 
+                        `<div class="user">User: ${message}</div>` +
+                        `<div class="ai">AI: Error: ${data.response}</div>`;
+                }
+                document.getElementById('user-message').value = ''; // Clear input field
+                document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight; // Auto-scroll
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('chat-box').innerHTML += 
+                    `<div class="user">User: ${message}</div>` +
+                    `<div class="ai">AI: Error: Unable to connect to the server.</div>`;
+            }
+        }
+        function initializeMap() {
+    const defaultLocation = { lat: 20.5937, lng: 78.9629 };
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: defaultLocation,
+        zoom: 6
+    });
+    infoWindow = new google.maps.InfoWindow();
+
+    // Handle dropdown changes
+    countryDropdown.addEventListener('change', function() {
+        const selectedCountry = countryDropdown.value;
+        const states = Object.keys(data[selectedCountry]);
+        populateDropdown(stateDropdown, states);
+        stateDropdown.disabled = false;
+        districtDropdown.disabled = true;
+        placeDropdown.disabled = true;
+    });
+
+    stateDropdown.addEventListener('change', function() {
+        const selectedCountry = countryDropdown.value;
+        const selectedState = stateDropdown.value;
+        const districts = Object.keys(data[selectedCountry][selectedState]);
+        populateDropdown(districtDropdown, districts);
+        districtDropdown.disabled = false;
+    });
+
+    districtDropdown.addEventListener('change', function() {
+        placeDropdown.disabled = false;
+    });
+
+    placeDropdown.addEventListener('change', function() {
+        const selectedCountry = countryDropdown.value;
+        const selectedState = stateDropdown.value;
+        const selectedDistrict = districtDropdown.value;
+        const selectedPlace = data[selectedCountry][selectedState][selectedDistrict][0];
+        geocodeAddress(`${selectedDistrict}, ${selectedState}, ${selectedCountry}`, function(location) {
+            updateMapCenter(location, 12);
+            fetchAndDisplayMarkers(placeDropdown.value, location);
+        });
+    });
+
+    // New functionality: Click on the map to get place options
+    google.maps.event.addListener(map, 'click', function(event) {
+        const clickedLocation = event.latLng;
+        geocodeLatLng(clickedLocation, function(place) {
+            if (place) {
+                const placeId = place.place_id;
+                const placeName = place.formatted_address;
+                const placeVicinity = place.vicinity || 'Unknown vicinity';
+                
+                // Open info window with the same options
+                infoWindow.setContent(`
+                    <div>
+                        <h3>${placeName}</h3>
+                        <p>${placeVicinity}</p>
+                        <button onclick="showDetails('${placeId}', '${placeName}', '${placeVicinity}', ${clickedLocation.lat()}, ${clickedLocation.lng()})">Details</button>
+                        <button onclick="show360View(${clickedLocation.lat()}, ${clickedLocation.lng()})">360 Degree View</button>
+                        <button onclick="openChatWithAI('${placeId}', '${placeName}', '${placeVicinity}', ${clickedLocation.lat()}, ${clickedLocation.lng()})">Chat with AI</button>
+                    </div>
+                `);
+                infoWindow.setPosition(clickedLocation);
+                infoWindow.open(map);
+            }
+        });
+    });
+}
+
+function geocodeLatLng(latLng, callback) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ location: latLng }, function(results, status) {
+        if (status === google.maps.GeocoderStatus.OK && results[0]) {
+            callback(results[0]);
+        } else {
+            alert('Geocode was not successful for the following reason: ' + status);
+            callback(null);
+        }
+    });
+}
+
+// Add event listener for search button
+document.getElementById('search-button').addEventListener('click', function() {
+    const placeName = document.getElementById('search-input').value.trim();
+    if (placeName) {
+        geocodeAddress(placeName, function(location) {
+            if (location) {
+                // Clear existing markers if necessary
+                clearMarkers();
+
+                // Center the map on the found location
+                map.setCenter(location);
+                map.setZoom(12);
+
+                // Create a marker for the location
+                const marker = new google.maps.Marker({
+                    position: location,
+                    map: map,
+                    title: placeName
+                });
+
+                // Add the marker to the array of markers (if you're managing them)
+                markers.push(marker);
+
+                // Create an info window for the marker
+                const infoWindow = new google.maps.InfoWindow();
+                infoWindow.setContent(`
+                    <div>
+                        <h3>${placeName}</h3>
+                        <button onclick="showDetails('', '${placeName}', '', ${location.lat()}, ${location.lng()})">Details</button>
+                        <button onclick="show360View(${location.lat()}, ${location.lng()})">360 Degree View</button>
+                        <button onclick="openChatWithAI('', '${placeName}', '', ${location.lat()}, ${location.lng()})">Chat with AI</button>
+                    </div>
+                `);
+                infoWindow.open(map, marker);
+            } else {
+                alert("Could not find the place. Please try again.");
+            }
+        });
+    } else {
+        alert("Please enter a place name.");
+    }
+});
+
+// Function to geocode the address
+function geocodeAddress(address, callback) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ 'address': address }, function(results, status) {
+        if (status === 'OK' && results[0]) {
+            const location = results[0].geometry.location;
+            callback(location);
+        } else {
+            callback(null); // Return null if not found
+        }
+    });
+}
+
+// Function to clear existing markers (optional, but helpful for managing map clutter)
+function clearMarkers() {
+    markers.forEach(marker => marker.setMap(null));
+    markers = []; // Clear the array of markers
+}
+
+document.querySelectorAll('.dropdown-container select').forEach(function(dropdown) {
+    dropdown.addEventListener('mouseover', function() {
+        dropdown.classList.add('dropdown-hover');
+    });
+    dropdown.addEventListener('mouseout', function() {
+        dropdown.classList.remove('dropdown-hover');
+    });
+});
+
+
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=Your_Google_map_api_key&libraries=places"></script>
+</body>
+</html>
