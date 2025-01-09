@@ -1,6 +1,16 @@
 # Indian_Tourism_AR
 This project promotes Indian tourism via a virtual platform using AR and AI. Users can search tourist locations, explore them in 360° Street Views, and interact with an AI chat system for insights. Built with Google Maps API and a Flask backend, it makes cultural heritage accessible globally.
 
+
+
+https://github.com/user-attachments/assets/df7a7ad2-24dc-4bd5-b504-70d000330f89
+
+
+
+https://github.com/user-attachments/assets/b04d5603-1baf-44b6-90c5-252c67484458
+
+
+
 ![image](https://github.com/user-attachments/assets/da1fbcbb-63b9-4994-be37-a7528c0fbdcb)
 
 
